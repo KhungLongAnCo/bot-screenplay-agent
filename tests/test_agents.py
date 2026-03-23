@@ -98,7 +98,8 @@ def test_agent4_preserves_scene_data():
 
 
 from urllib.parse import quote
-from src.agents.agent5_generate_images import agent5_generate_images, build_image_url
+from src.agents.agent5_generate_images import agent5_generate_images
+from src.agents.tools.image_tools import build_image_url
 
 
 def test_build_image_url():
@@ -139,7 +140,7 @@ async def test_agent5_sets_image_url():
     # Dunder methods must be set on the type, not the instance
     type(mock_dir).__truediv__ = MagicMock(return_value=mock_file)
 
-    with patch("src.agents.agent5_generate_images.httpx.AsyncClient", return_value=mock_client):
+    with patch("src.agents.tools.image_tools.httpx.AsyncClient", return_value=mock_client):
         with patch("src.agents.agent5_generate_images.Path", return_value=mock_dir):
             result = await agent5_generate_images(state)
 

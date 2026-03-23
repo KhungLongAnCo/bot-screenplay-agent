@@ -1,10 +1,10 @@
 from typing import List
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_anthropic import ChatAnthropic
 
 from src.state import GraphState, Scene
 from src.prompts import AGENT4_SYSTEM_PROMPT, GRAPHIC_STYLES
+from src.agents.config import get_llm
 
 
 def generate_image_prompt(scene: Scene, graphic_style: str, llm) -> str:
@@ -23,7 +23,7 @@ def generate_image_prompt(scene: Scene, graphic_style: str, llm) -> str:
 
 
 def agent4_image_prompts(state: GraphState) -> dict:
-    llm = ChatAnthropic(model="claude-sonnet-4-20250514", max_tokens=3000)
+    llm = get_llm(max_tokens=3000)
     scenes_with_prompts: List[Scene] = []
     for scene in state["scenes"]:
         prompt_text = generate_image_prompt(scene, state["graphic_style"], llm)

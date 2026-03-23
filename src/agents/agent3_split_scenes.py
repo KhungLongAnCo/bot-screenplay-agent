@@ -1,13 +1,13 @@
 from typing import List
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_anthropic import ChatAnthropic
 
 from src.state import GraphState, Scene
 from src.prompts import AGENT3_SYSTEM_PROMPT
+from src.agents.config import get_llm
 
 
 def build_structured_chain():
-    llm = ChatAnthropic(model="claude-sonnet-4-20250514", max_tokens=2500)
+    llm = get_llm(max_tokens=2500)
     structured_llm = llm.with_structured_output(List[Scene])
     prompt = ChatPromptTemplate.from_messages([
         ("system", AGENT3_SYSTEM_PROMPT),
