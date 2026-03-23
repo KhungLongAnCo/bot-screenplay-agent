@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Screenplay Agent Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: rgba(255,255,255,0.04);
+    --surface-hover: rgba(255,255,255,0.07);
+    --border: rgba(255,255,255,0.08);
+    --border-active: rgba(255,255,255,0.2);
+    --accent: #e8d5b0;
+    --accent-dim: rgba(232,213,176,0.15);
+    --text: #e8e6e1;
+    --text-dim: rgba(232,230,225,0.45);
+    --text-muted: rgba(232,230,225,0.25);
+    --danger: #c0392b;
+    --success: #27ae60;
+    --step-done: #e8d5b0;
+    --step-active: #fff;
+    --step-idle: rgba(255,255,255,0.2);
+    --radius: 8px;
+    --radius-lg: 14px;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --display: 'Bebas Neue', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 28px 40px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+  header h1 {
+    font-family: var(--display);
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  header span {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+
+  /* ── Layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 73px);
+    overflow-y: auto;
+  }
+
+  .field-label {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 12px 14px;
+    resize: vertical;
+    min-height: 180px;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--border-active); }
+  textarea::placeholder { color: var(--text-muted); }
+
+  select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    padding: 10px 14px;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.3)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    transition: border-color 0.15s;
+  }
+  select:focus { border-color: var(--border-active); }
+  select option { background: #1a1a24; }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+  }
+  .toggle-label { font-size: 13px; color: var(--text); }
+  .toggle-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; font-family: var(--mono); }
+
+  .toggle {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    border-radius: 11px;
+    background: rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-track::after { transform: translateX(18px); }
+
+  /* Run button */
+  .btn-run {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--display);
+    font-size: 18px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-run:hover { opacity: 0.9; }
+  .btn-run:active { transform: scale(0.98); }
+  .btn-run:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  /* ── Main Content ── */
+  .main {
+    padding: 32px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+
+  /* ── Pipeline Steps ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  .step:last-child { flex: none; }
+
+  .step-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--step-idle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--step-idle);
+    flex-shrink: 0;
+    transition: all 0.3s;
+    position: relative;
+  }
+  .step.done .step-dot {
+    border-color: var(--step-done);
+    color: var(--step-done);
+    background: rgba(232,213,176,0.08);
+  }
+  .step.active .step-dot {
+    border-color: var(--step-active);
+    color: var(--step-active);
+    background: rgba(255,255,255,0.08);
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.06);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  .step.skip .step-dot {
+    border-color: var(--step-idle);
+    opacity: 0.35;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(255,255,255,0.06); }
+    50% { box-shadow: 0 0 0 7px rgba(255,255,255,0.02); }
+  }
+
+  .step-info { min-width: 0; }
+  .step-name {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-dim);
+    white-space: nowrap;
+    transition: color 0.3s;
+  }
+  .step.done .step-name { color: var(--step-done); }
+  .step.active .step-name { color: var(--step-active); }
+  .step.skip .step-name { opacity: 0.35; }
+
+  .step-connector {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    margin: 0 6px;
+    min-width: 16px;
+  }
+
+  /* ── Script Output ── */
+  .section-title {
+    font-family: var(--display);
+    font-size: 20px;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .script-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    color: var(--text);
+    max-height: 360px;
+    overflow-y: auto;
+    display: none;
+  }
+  .script-box.visible { display: block; }
+
+  /* ── Scenes Table ── */
+  .scenes-grid {
+    display: grid;
+    gap: 16px;
+    display: none;
+  }
+  .scenes-grid.visible { display: grid; }
+
+  .scene-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .scene-card:hover { border-color: var(--border-active); }
+
+  .scene-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .scene-num {
+    font-family: var(--display);
+    font-size: 22px;
+    color: var(--accent);
+    line-height: 1;
+    min-width: 28px;
+  }
+  .scene-meta { flex: 1; min-width: 0; }
+  .scene-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .scene-location {
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-dim);
+    margin-top: 1px;
+  }
+  .scene-chevron {
+    color: var(--text-muted);
+    transition: transform 0.2s;
+    font-size: 12px;
+  }
+  .scene-card.open .scene-chevron { transform: rotate(180deg); }
+
+  .scene-body {
+    display: none;
+    padding: 0 20px 20px;
+    gap: 16px;
+    flex-direction: column;
+  }
+  .scene-card.open .scene-body { display: flex; }
+
+  .scene-section-label {
+    font-size: 10px;
+    font-family: var(--mono);
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .scene-section-label:first-child { border-top: none; padding-top: 16px; }
+
+  .scene-script-text {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+
+  .scene-prompt-text {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-style: italic;
+    line-height: 1.6;
+  }
+
+  .scene-image {
+    width: 100%;
+    max-width: 480px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    display: block;
+  }
+  .image-loading {
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 16/9;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+  }
+  .image-error {
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 16/9;
+    background: rgba(192,57,43,0.05);
+    border: 1px solid rgba(192,57,43,0.2);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: rgba(192,57,43,0.6);
+  }
+
+  /* ── Error Banner ── */
+  .error-banner {
+    background: rgba(192,57,43,0.08);
+    border: 1px solid rgba(192,57,43,0.25);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #e07060;
+    display: none;
+  }
+  .error-banner.visible { display: block; }
+
+  /* ── Empty state ── */
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 320px;
+    gap: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    text-align: center;
+  }
+  .empty svg { opacity: 0.15; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Screenplay Agent</h1>
+  <span>5-agent LangGraph pipeline</span>
+</header>
+
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+
+    <div>
+      <label class="field-label" for="draft">Draft / Idea</label>
+      <textarea id="draft" placeholder="Một cô gái trẻ trở về quê hương sau 10 năm xa cách..."></textarea>
+    </div>
+
+    <div>
+      <label class="field-label" for="style">Graphic Style</label>
+      <select id="style">
+        <option>Cinematic Realism</option>
+        <option>Anime / Ghibli</option>
+        <option>Watercolor</option>
+        <option>Graphic Novel</option>
+        <option>Dark Fantasy</option>
+        <option>Vintage Film</option>
+      </select>
+    </div>
+
+    <div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Generate Images</div>
+          <div class="toggle-sub">via Pollinations.ai</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="createImages" />
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+    </div>
+
+    <button class="btn-run" id="runBtn" onclick="runPipeline()">RUN PIPELINE</button>
+
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+
+    <!-- Pipeline progress -->
+    <div class="pipeline" id="pipeline">
+      <div class="step" id="step1" data-label="Analyze">
+        <div class="step-dot">1</div>
+        <div class="step-info"><div class="step-name">Analyze</div></div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" id="step2" data-label="Style">
+        <div class="step-dot">2</div>
+        <div class="step-info"><div class="step-name">Style</div></div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" id="step3" data-label="Split">
+        <div class="step-dot">3</div>
+        <div class="step-info"><div class="step-name">Split</div></div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" id="step4" data-label="Prompts">
+        <div class="step-dot">4</div>
+        <div class="step-info"><div class="step-name">Prompts</div></div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" id="step5" data-label="Images">
+        <div class="step-dot">5</div>
+        <div class="step-info"><div class="step-name">Images</div></div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-banner" id="errorBanner"></div>
+
+    <!-- Styled script -->
+    <div id="scriptSection" style="display:none">
+      <div class="section-title">Styled Script</div>
+      <div class="script-box visible" id="scriptBox"></div>
+    </div>
+
+    <!-- Scenes -->
+    <div id="scenesSection" style="display:none">
+      <div class="section-title">Scenes</div>
+      <div class="scenes-grid visible" id="scenesGrid"></div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty" id="emptyState">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <rect x="8" y="4" width="32" height="40" rx="3" stroke="white" stroke-width="1.5"/>
+        <line x1="14" y1="14" x2="34" y2="14" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="14" y1="20" x2="34" y2="20" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="14" y1="26" x2="26" y2="26" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div>Enter your draft and run the pipeline</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  // ── State ─────────────────────────────────────────────────────────────────
+
+  let running = false;
+
+  // ── Pipeline steps ────────────────────────────────────────────────────────
+
+  const STEPS = ['step1','step2','step3','step4','step5'];
+
+  function resetSteps() {
+    STEPS.forEach(id => {
+      const el = document.getElementById(id);
+      el.className = 'step';
+    });
+  }
+
+  function setStep(n, state) {
+    // state: 'active' | 'done' | 'skip'
+    const el = document.getElementById('step' + n);
+    el.className = 'step ' + state;
+    if (state === 'done') {
+      el.querySelector('.step-dot').innerHTML = '✓';
+    } else {
+      el.querySelector('.step-dot').innerHTML = String(n);
+    }
+  }
+
+  async function animateSteps(createImages) {
+    // Simulate step progression during the API call
+    const delays = [0, 4000, 8000, 12000, createImages ? 16000 : null];
+    for (let i = 0; i < 5; i++) {
+      if (i === 4 && !createImages) {
+        setStep(5, 'skip');
+        continue;
+      }
+      await sleep(delays[i]);
+      if (!running) return;
+      // Mark previous done
+      if (i > 0) setStep(i, 'done');
+      setStep(i + 1, 'active');
+    }
+  }
+
+  function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+
+  function finishSteps(createImages) {
+    const last = createImages ? 5 : 4;
+    for (let i = 1; i <= last; i++) setStep(i, 'done');
+    if (!createImages) setStep(5, 'skip');
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  function renderScript(text) {
+    const box = document.getElementById('scriptBox');
+    const section = document.getElementById('scriptSection');
+    box.textContent = text;
+    section.style.display = 'block';
+  }
+
+  function renderScenes(scenes, showImages) {
+    const grid = document.getElementById('scenesGrid');
+    const section = document.getElementById('scenesSection');
+    grid.innerHTML = '';
+
+    scenes.forEach(scene => {
+      const card = document.createElement('div');
+      card.className = 'scene-card';
+      card.innerHTML = `
+        <div class="scene-header" onclick="toggleCard(this.parentElement)">
+          <div class="scene-num">${String(scene.scene_number).padStart(2,'0')}</div>
+          <div class="scene-meta">
+            <div class="scene-title">${escapeHtml(scene.title)}</div>
+            <div class="scene-location">${escapeHtml(scene.location)}</div>
+          </div>
+          <span class="scene-chevron">▼</span>
+        </div>
+        <div class="scene-body">
+          <div>
+            <div class="scene-section-label">Scene Script</div>
+            <div class="scene-script-text">${escapeHtml(scene.scene_script)}</div>
+          </div>
+          ${scene.image_prompt ? `
+          <div>
+            <div class="scene-section-label">Image Prompt</div>
+            <div class="scene-prompt-text">${escapeHtml(scene.image_prompt)}</div>
+          </div>` : ''}
+          ${showImages ? `
+          <div>
+            <div class="scene-section-label">Generated Image</div>
+            ${renderImageSlot(scene)}
+          </div>` : ''}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    section.style.display = 'block';
+  }
+
+  function renderImageSlot(scene) {
+    if (scene.image_url) {
+      // Could be a local path or URL
+      const src = scene.image_url.startsWith('http')
+        ? scene.image_url
+        : `/static/output/${scene.image_url.split('/').pop()}`;
+      return `<img class="scene-image" src="${src}"
+                   onerror="this.outerHTML='<div class=\\'image-error\\'>Image unavailable</div>'"
+                   onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.4s" />`;
+    }
+    return `<div class="image-loading">loading image...</div>`;
+  }
+
+  function toggleCard(card) {
+    card.classList.toggle('open');
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorBanner');
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  function clearError() {
+    document.getElementById('errorBanner').classList.remove('visible');
+  }
+
+  function showEmpty() {
+    document.getElementById('emptyState').style.display = 'flex';
+  }
+
+  function hideEmpty() {
+    document.getElementById('emptyState').style.display = 'none';
+  }
+
+  // ── Run Pipeline ──────────────────────────────────────────────────────────
+
+  async function runPipeline() {
+    const draft = document.getElementById('draft').value.trim();
+    if (!draft) {
+      document.getElementById('draft').focus();
+      return;
+    }
+
+    const style = document.getElementById('style').value;
+    const createImages = document.getElementById('createImages').checked;
+
+    // Reset UI
+    running = true;
+    clearError();
+    hideEmpty();
+    document.getElementById('scriptSection').style.display = 'none';
+    document.getElementById('scenesSection').style.display = 'none';
+    document.getElementById('runBtn').disabled = true;
+    document.getElementById('runBtn').textContent = 'RUNNING...';
+    resetSteps();
+
+    // Animate steps concurrently with API call
+    animateSteps(createImages);
+
+    try {
+      const res = await fetch('/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ draft, graphic_style: style, is_create_image: createImages }),
+      });
+
+      running = false;
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error(err.error || res.statusText);
+      }
+
+      const data = await res.json();
+
+      finishSteps(createImages);
+      renderScript(data.styled_script);
+      renderScenes(data.scenes, createImages);
+
+    } catch (err) {
+      running = false;
+      resetSteps();
+      showError('Pipeline error: ' + err.message);
+      showEmpty();
+    } finally {
+      document.getElementById('runBtn').disabled = false;
+      document.getElementById('runBtn').textContent = 'RUN PIPELINE';
+    }
+  }
+
+  // Allow Ctrl+Enter to submit
+  document.getElementById('draft').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) runPipeline();
+  });
+</script>
+
+</body>
+</html>
