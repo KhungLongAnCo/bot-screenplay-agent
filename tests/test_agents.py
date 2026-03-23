@@ -55,9 +55,10 @@ def test_agent3_returns_scene_list():
         Scene(scene_number=2, title="Night Walk", location="EXT. STREET - NIGHT", scene_script="She walks away."),
     ]
 
+    from src.agents.agent3_split_scenes import SceneList
     with patch("src.agents.agent3_split_scenes.build_structured_chain") as mock_build:
         mock_chain = MagicMock()
-        mock_chain.invoke.return_value = mock_scenes
+        mock_chain.invoke.return_value = SceneList(scenes=mock_scenes)
         mock_build.return_value = mock_chain
         result = agent3_split_scenes(state)
 

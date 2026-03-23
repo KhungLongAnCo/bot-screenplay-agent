@@ -7,7 +7,7 @@ from src.agents.config import get_llm
 
 
 def build_chain():
-    llm = get_llm(max_tokens=3000)
+    llm = get_llm()
     prompt = ChatPromptTemplate.from_messages([
         ("system", AGENT1_SYSTEM_PROMPT),
         ("human", "KỊCH BẢN DRAFT:\n{draft}"),

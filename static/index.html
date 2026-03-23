@@ -628,15 +628,21 @@
         <!-- Error -->
         <div class="error-banner" id="errorBanner"></div>
 
-        <!-- Styled script -->
+        <!-- Step 1: Completed script -->
+        <div id="completedSection" style="display: none">
+          <div class="section-title">Completed Script <span style="font-family:var(--mono);font-size:12px;color:var(--text-dim);letter-spacing:1px;">· Agent 1</span></div>
+          <div class="script-box visible" id="completedBox"></div>
+        </div>
+
+        <!-- Step 2: Styled script -->
         <div id="scriptSection" style="display: none">
-          <div class="section-title">Styled Script</div>
+          <div class="section-title">Styled Script <span style="font-family:var(--mono);font-size:12px;color:var(--text-dim);letter-spacing:1px;">· Agent 2</span></div>
           <div class="script-box visible" id="scriptBox"></div>
         </div>
 
-        <!-- Scenes -->
+        <!-- Steps 3-5: Scenes -->
         <div id="scenesSection" style="display: none">
-          <div class="section-title">Scenes</div>
+          <div class="section-title">Scenes <span style="font-family:var(--mono);font-size:12px;color:var(--text-dim);letter-spacing:1px;" id="scenesAgentLabel">· Agent 3</span></div>
           <div class="scenes-grid visible" id="scenesGrid"></div>
         </div>
 
@@ -686,138 +692,27 @@
     </div>
 
     <script>
-      // ── State ─────────────────────────────────────────────────────────────────
-
-      let running = false;
-
-      // ── Pipeline steps ────────────────────────────────────────────────────────
-
-      const STEPS = ["step1", "step2", "step3", "step4", "step5"];
+      // ── Step UI ───────────────────────────────────────────────────────────────
 
       function resetSteps() {
-        STEPS.forEach((id) => {
-          const el = document.getElementById(id);
+        for (let i = 1; i <= 5; i++) {
+          const el = document.getElementById("step" + i);
           el.className = "step";
-        });
+          el.querySelector(".step-dot").textContent = String(i);
+        }
       }
 
       function setStep(n, state) {
-        // state: 'active' | 'done' | 'skip'
         const el = document.getElementById("step" + n);
         el.className = "step " + state;
-        if (state === "done") {
-          el.querySelector(".step-dot").innerHTML = "✓";
-        } else {
-          el.querySelector(".step-dot").innerHTML = String(n);
-        }
+        el.querySelector(".step-dot").textContent = state === "done" ? "✓" : String(n);
       }
 
-      async function animateSteps(createImages) {
-        // Simulate step progression during the API call
-        const delays = [0, 4000, 8000, 12000, createImages ? 16000 : null];
-        for (let i = 0; i < 5; i++) {
-          if (i === 4 && !createImages) {
-            setStep(5, "skip");
-            continue;
-          }
-          await sleep(delays[i]);
-          if (!running) return;
-          // Mark previous done
-          if (i > 0) setStep(i, "done");
-          setStep(i + 1, "active");
-        }
-      }
-
-      function sleep(ms) {
-        return new Promise((r) => setTimeout(r, ms));
-      }
-
-      function finishSteps(createImages) {
-        const last = createImages ? 5 : 4;
-        for (let i = 1; i <= last; i++) setStep(i, "done");
-        if (!createImages) setStep(5, "skip");
-      }
-
-      // ── Render ────────────────────────────────────────────────────────────────
-
-      function renderScript(text) {
-        const box = document.getElementById("scriptBox");
-        const section = document.getElementById("scriptSection");
-        box.textContent = text;
-        section.style.display = "block";
-      }
-
-      function renderScenes(scenes, showImages) {
-        const grid = document.getElementById("scenesGrid");
-        const section = document.getElementById("scenesSection");
-        grid.innerHTML = "";
-
-        scenes.forEach((scene) => {
-          const card = document.createElement("div");
-          card.className = "scene-card";
-          card.innerHTML = `
-        <div class="scene-header" onclick="toggleCard(this.parentElement)">
-          <div class="scene-num">${String(scene.scene_number).padStart(2, "0")}</div>
-          <div class="scene-meta">
-            <div class="scene-title">${escapeHtml(scene.title)}</div>
-            <div class="scene-location">${escapeHtml(scene.location)}</div>
-          </div>
-          <span class="scene-chevron">▼</span>
-        </div>
-        <div class="scene-body">
-          <div>
-            <div class="scene-section-label">Scene Script</div>
-            <div class="scene-script-text">${escapeHtml(scene.scene_script)}</div>
-          </div>
-          ${
-            scene.image_prompt
-              ? `
-          <div>
-            <div class="scene-section-label">Image Prompt</div>
-            <div class="scene-prompt-text">${escapeHtml(scene.image_prompt)}</div>
-          </div>`
-              : ""
-          }
-          ${
-            showImages
-              ? `
-          <div>
-            <div class="scene-section-label">Generated Image</div>
-            ${renderImageSlot(scene)}
-          </div>`
-              : ""
-          }
-        </div>
-      `;
-          grid.appendChild(card);
-        });
-
-        section.style.display = "block";
-      }
-
-      function renderImageSlot(scene) {
-        if (scene.image_url) {
-          // Could be a local path or URL
-          const src = scene.image_url.startsWith("http")
-            ? scene.image_url
-            : `/static/output/${scene.image_url.split("/").pop()}`;
-          return `<img class="scene-image" src="${src}"
-                   onerror="this.outerHTML='<div class=\\'image-error\\'>Image unavailable</div>'"
-                   onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.4s" />`;
-        }
-        return `<div class="image-loading">loading image...</div>`;
-      }
-
-      function toggleCard(card) {
-        card.classList.toggle("open");
-      }
+      // ── Helpers ───────────────────────────────────────────────────────────────
 
       function escapeHtml(str) {
         if (!str) return "";
-        return str
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
       }
 
       function showError(msg) {
@@ -830,66 +725,168 @@
         document.getElementById("errorBanner").classList.remove("visible");
       }
 
-      function showEmpty() {
-        document.getElementById("emptyState").style.display = "flex";
+      function showEmpty() { document.getElementById("emptyState").style.display = "flex"; }
+      function hideEmpty() { document.getElementById("emptyState").style.display = "none"; }
+
+      // ── Render ────────────────────────────────────────────────────────────────
+
+      function renderCompleted(text) {
+        document.getElementById("completedBox").textContent = text;
+        document.getElementById("completedSection").style.display = "block";
       }
 
-      function hideEmpty() {
-        document.getElementById("emptyState").style.display = "none";
+      function renderScript(text) {
+        document.getElementById("scriptBox").textContent = text;
+        document.getElementById("scriptSection").style.display = "block";
+      }
+
+      function buildSceneCard(scene) {
+        const card = document.createElement("div");
+        card.className = "scene-card";
+        card.id = "scene-card-" + scene.scene_number;
+        updateSceneCard(card, scene);
+        return card;
+      }
+
+      function updateSceneCard(card, scene) {
+        card.innerHTML = `
+          <div class="scene-header" onclick="toggleCard(this.parentElement)">
+            <div class="scene-num">${String(scene.scene_number).padStart(2, "0")}</div>
+            <div class="scene-meta">
+              <div class="scene-title">${escapeHtml(scene.title)}</div>
+              <div class="scene-location">${escapeHtml(scene.location)}</div>
+            </div>
+            <span class="scene-chevron">▼</span>
+          </div>
+          <div class="scene-body">
+            <div>
+              <div class="scene-section-label">Scene Script</div>
+              <div class="scene-script-text">${escapeHtml(scene.scene_script)}</div>
+            </div>
+            ${scene.image_prompt ? `
+            <div>
+              <div class="scene-section-label">Image Prompt</div>
+              <div class="scene-prompt-text">${escapeHtml(scene.image_prompt)}</div>
+            </div>` : ""}
+            ${scene.image_url ? `
+            <div>
+              <div class="scene-section-label">Generated Image</div>
+              ${renderImageSlot(scene)}
+            </div>` : ""}
+          </div>`;
+      }
+
+      function renderImageSlot(scene) {
+        if (!scene.image_url) return `<div class="image-loading">loading image...</div>`;
+        const src = scene.image_url.startsWith("http")
+          ? scene.image_url
+          : `/static/output/${scene.image_url.split("/").pop()}`;
+        return `<img class="scene-image" src="${src}"
+                 onerror="this.outerHTML='<div class=\\'image-error\\'>Image unavailable</div>'"
+                 onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.4s" />`;
+      }
+
+      function renderScenes(scenes, agentLabel) {
+        const grid = document.getElementById("scenesGrid");
+        const section = document.getElementById("scenesSection");
+        document.getElementById("scenesAgentLabel").textContent = agentLabel;
+        grid.innerHTML = "";
+        scenes.forEach((scene) => grid.appendChild(buildSceneCard(scene)));
+        section.style.display = "block";
+      }
+
+      function updateScenes(scenes, agentLabel) {
+        document.getElementById("scenesAgentLabel").textContent = agentLabel;
+        scenes.forEach((scene) => {
+          const card = document.getElementById("scene-card-" + scene.scene_number);
+          if (card) updateSceneCard(card, scene);
+        });
+      }
+
+      function toggleCard(card) { card.classList.toggle("open"); }
+
+      // ── SSE stream handler ────────────────────────────────────────────────────
+
+      function handleStepEvent(event, createImages) {
+        if (event.type === "step_done") {
+          const n = event.step;
+          setStep(n, "done");
+          const next = n + 1;
+          if (next <= 5) {
+            if (next === 5 && !createImages) setStep(5, "skip");
+            else setStep(next, "active");
+          }
+
+          if (n === 1 && event.completed_script) {
+            renderCompleted(event.completed_script);
+          }
+          if (n === 2 && event.styled_script) {
+            renderScript(event.styled_script);
+          }
+          if (n === 3 && event.scenes) {
+            renderScenes(event.scenes, "· Agent 3");
+          }
+          if (n === 4 && event.scenes_with_prompts) {
+            updateScenes(event.scenes_with_prompts, "· Agent 4");
+          }
+          if (n === 5 && event.final_scenes) {
+            updateScenes(event.final_scenes, "· Agent 5");
+          }
+        } else if (event.type === "error") {
+          throw new Error(event.message);
+        }
       }
 
       // ── Run Pipeline ──────────────────────────────────────────────────────────
 
       async function runPipeline() {
         const draft = document.getElementById("draft").value.trim();
-        if (!draft) {
-          document.getElementById("draft").focus();
-          return;
-        }
+        if (!draft) { document.getElementById("draft").focus(); return; }
 
         const style = document.getElementById("style").value;
         const createImages = document.getElementById("createImages").checked;
 
         // Reset UI
-        running = true;
         clearError();
         hideEmpty();
+        document.getElementById("completedSection").style.display = "none";
         document.getElementById("scriptSection").style.display = "none";
         document.getElementById("scenesSection").style.display = "none";
         document.getElementById("runBtn").disabled = true;
         document.getElementById("runBtn").textContent = "RUNNING...";
         resetSteps();
-
-        // Animate steps concurrently with API call
-        animateSteps(createImages);
+        setStep(1, "active");
 
         try {
-          const res = await fetch("/run", {
+          const res = await fetch("/stream", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              draft,
-              graphic_style: style,
-              is_create_image: createImages,
-            }),
+            body: JSON.stringify({ draft, graphic_style: style, is_create_image: createImages }),
           });
 
-          running = false;
-
           if (!res.ok) {
-            const err = await res
-              .json()
-              .catch(() => ({ error: res.statusText }));
+            const err = await res.json().catch(() => ({ error: res.statusText }));
             throw new Error(err.error || res.statusText);
           }
 
-          const data = await res.json();
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
 
-          finishSteps(createImages);
-          renderScript(data.styled_script);
-          renderScenes(data.scenes, createImages);
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop();
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const event = JSON.parse(line.slice(6));
+              if (event.type === "done") break;
+              handleStepEvent(event, createImages);
+            }
+          }
         } catch (err) {
-          running = false;
           resetSteps();
           showError("Pipeline error: " + err.message);
           showEmpty();
