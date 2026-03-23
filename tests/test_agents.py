@@ -44,3 +44,22 @@ def test_agent2_returns_styled_script():
 
     assert result["styled_script"] == "INT. CAFE - DAY\nFormatted text."
     mock_chain.invoke.assert_called_once_with({"completed_script": state["completed_script"]})
+
+
+def test_agent3_returns_scene_list():
+    from src.agents.agent3_split_scenes import agent3_split_scenes
+
+    state = make_state(styled_script="INT. CAFE - DAY\nA woman enters.\nEXT. STREET - NIGHT\nShe walks away.")
+    mock_scenes = [
+        Scene(scene_number=1, title="Cafe Arrival", location="INT. CAFE - DAY", scene_script="A woman enters."),
+        Scene(scene_number=2, title="Night Walk", location="EXT. STREET - NIGHT", scene_script="She walks away."),
+    ]
+
+    with patch("src.agents.agent3_split_scenes.build_structured_chain") as mock_build:
+        mock_chain = MagicMock()
+        mock_chain.invoke.return_value = mock_scenes
+        mock_build.return_value = mock_chain
+        result = agent3_split_scenes(state)
+
+    assert len(result["scenes"]) == 2
+    assert result["scenes"][0].title == "Cafe Arrival"
