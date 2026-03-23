@@ -30,3 +30,17 @@ def test_agent1_returns_completed_script():
     assert "completed_script" in result
     assert result["completed_script"] == "Completed screenplay text here."
     mock_chain.invoke.assert_called_once_with({"draft": state["draft"]})
+
+
+def test_agent2_returns_styled_script():
+    from src.agents.agent2_style import agent2_style
+
+    state = make_state(completed_script="Draft screenplay text.")
+    mock_chain = MagicMock()
+    mock_chain.invoke.return_value = "INT. CAFE - DAY\nFormatted text."
+
+    with patch("src.agents.agent2_style.build_chain", return_value=mock_chain):
+        result = agent2_style(state)
+
+    assert result["styled_script"] == "INT. CAFE - DAY\nFormatted text."
+    mock_chain.invoke.assert_called_once_with({"completed_script": state["completed_script"]})
