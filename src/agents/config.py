@@ -1,7 +1,7 @@
-from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
 
-MODEL_NAME = "claude-sonnet-4-20250514"
+MODEL_NAME = "gpt-4o-mini"
 
 
-def get_llm(max_tokens: int = 3000) -> ChatAnthropic:
-    return ChatAnthropic(model=MODEL_NAME, max_tokens=max_tokens)
+def get_llm(max_tokens: int = 3000) -> ChatOpenAI:
+    return ChatOpenAI(model=MODEL_NAME, max_tokens=max_tokens)

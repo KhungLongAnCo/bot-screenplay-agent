@@ -73,9 +73,10 @@ def test_agent4_adds_image_prompt():
     ]
     state = make_state(scenes=scenes, graphic_style="Cinematic Realism")
 
-    with patch("src.agents.agent4_image_prompts.generate_image_prompt") as mock_gen:
-        mock_gen.return_value = "cinematic realism, dramatic lighting, woman entering cafe"
-        result = agent4_image_prompts(state)
+    with patch("src.agents.agent4_image_prompts.get_llm", return_value=MagicMock()):
+        with patch("src.agents.agent4_image_prompts.generate_image_prompt") as mock_gen:
+            mock_gen.return_value = "cinematic realism, dramatic lighting, woman entering cafe"
+            result = agent4_image_prompts(state)
 
     assert len(result["scenes_with_prompts"]) == 1
     assert result["scenes_with_prompts"][0].image_prompt == "cinematic realism, dramatic lighting, woman entering cafe"
@@ -89,8 +90,9 @@ def test_agent4_preserves_scene_data():
     ]
     state = make_state(scenes=scenes, graphic_style="Anime / Ghibli")
 
-    with patch("src.agents.agent4_image_prompts.generate_image_prompt", return_value="anime style"):
-        result = agent4_image_prompts(state)
+    with patch("src.agents.agent4_image_prompts.get_llm", return_value=MagicMock()):
+        with patch("src.agents.agent4_image_prompts.generate_image_prompt", return_value="anime style"):
+            result = agent4_image_prompts(state)
 
     s = result["scenes_with_prompts"][0]
     assert s.scene_number == 1
