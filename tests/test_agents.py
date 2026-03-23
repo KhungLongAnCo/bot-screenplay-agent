@@ -63,3 +63,35 @@ def test_agent3_returns_scene_list():
 
     assert len(result["scenes"]) == 2
     assert result["scenes"][0].title == "Cafe Arrival"
+
+
+def test_agent4_adds_image_prompt():
+    from src.agents.agent4_image_prompts import agent4_image_prompts
+
+    scenes = [
+        Scene(scene_number=1, title="Opening", location="INT. CAFE - DAY", scene_script="She enters."),
+    ]
+    state = make_state(scenes=scenes, graphic_style="Cinematic Realism")
+
+    with patch("src.agents.agent4_image_prompts.generate_image_prompt") as mock_gen:
+        mock_gen.return_value = "cinematic realism, dramatic lighting, woman entering cafe"
+        result = agent4_image_prompts(state)
+
+    assert len(result["scenes_with_prompts"]) == 1
+    assert result["scenes_with_prompts"][0].image_prompt == "cinematic realism, dramatic lighting, woman entering cafe"
+
+
+def test_agent4_preserves_scene_data():
+    from src.agents.agent4_image_prompts import agent4_image_prompts
+
+    scenes = [
+        Scene(scene_number=1, title="Opening", location="INT. CAFE - DAY", scene_script="She enters."),
+    ]
+    state = make_state(scenes=scenes, graphic_style="Anime / Ghibli")
+
+    with patch("src.agents.agent4_image_prompts.generate_image_prompt", return_value="anime style"):
+        result = agent4_image_prompts(state)
+
+    s = result["scenes_with_prompts"][0]
+    assert s.scene_number == 1
+    assert s.scene_script == "She enters."
